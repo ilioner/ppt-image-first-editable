@@ -10,7 +10,7 @@
 |---|---|---|
 | **Phase A** | 对话式定稿，每页出一张高密度视觉稿，合成图片型 PPTX | **默认** |
 | **Phase A 完成后** | **主动询问用户是否要可编辑文字版** | 强制询问 |
-| **Phase C** | 分层重新生成"带装饰、留白文字区"的背景 + HTML 编辑器调文字 + 渲染原生可编辑 PPTX | 用户同意才走 |
+| **Phase C** | 先直编 Phase A 成品图，失败再回退到重生成背景 + HTML 编辑器调文字 + 渲染原生可编辑 PPTX | 用户同意才走 |
 | **Phase C-only** | 直接进入可编辑版流程，跳过 Phase A | 用户明确要求时走 |
 
 ---
@@ -47,8 +47,8 @@
              │
              ▼
 ┌── Phase C（文字可编辑路径）─────────────┐
-│  C1  双轨生成背景                        │
-│      (完整稿 → imagegen 擦字稿)          │
+│  C1  先直编 Phase A 成品图                │
+│      (直编不干净时才回退到完整稿→擦字稿)   │
 │  C2  detect_reserved_zones 校验          │
 │  C3  写 deck.json                        │
 │  C4  inject_editor_deck.py 注入          │
@@ -60,7 +60,7 @@
 
 ┌── Phase C-only（直接进入可编辑版）────────┐
 │  C0  收集最小输入或复用现有产物           │
-│  C1  双轨生成背景                        │
+│  C1  先直编 Phase A 成品图                │
 │  C2  detect_reserved_zones 校验          │
 │  C3  写 deck.json                        │
 │  C4  inject_editor_deck.py 注入          │
@@ -82,7 +82,7 @@
 6. **图片型 PPTX** —— 高完成度视觉稿，直接拿去汇报
 
 ### Phase C（用户同意才追加）
-7. `phaseC/backgrounds/NN.png` —— 每页擦字稿背景图
+7. `phaseC/backgrounds/NN.png` —— 每页背景图（直编成功时可直接复用）
 8. `phaseC/deck.json` —— 单一真相源（编辑器、渲染器共同消费）
 9. **文字可编辑 PPTX** —— 文字是真 TextBox，PowerPoint / Keynote 里可直接改
 
@@ -199,6 +199,7 @@ ppt-image-first-editable/
 - **必须主动询问 Phase C**：Phase A 交付后必须问一次"是否要可编辑文字版"，不要默认沉默也不要默认进入。
 - **Phase C 用户驱动**：只有用户主动说要才执行，绝不强推。
 - **Phase C-only**：用户明确要求跳过图片版时，直接进入 Phase C，不再跑 Phase A。
+- **Phase C 优先直编**：先直接编辑 Phase A 成品图；直编不干净再回退到重生成背景 + 擦字稿。
 - **deck.json 是 Phase C 单一真相源**：HTML 编辑器和 PPTX 渲染器都消费它。
 - **字体限定 SAFE_FONT_SET**：跨平台稳定。
 - **逐页可恢复**：所有 manifest 都保留，中断可从未完成页继续。
@@ -208,4 +209,4 @@ ppt-image-first-editable/
 
 ## 致谢
 
-本技能起源于 [`ppt-image-first`](https://linux.do/) 的 Phase A 工作流原型。Phase C 全套（双轨生成 + 留白校验 + HTML 编辑器 + JSON→PPTX 渲染器）、Stage 5.5 retouch 工具链、IOPaint 自动安装与启动器 —— 本 skill 自有。商用时请同时标明上述来源。
+本技能起源于 [`ppt-image-first`](https://linux.do/) 的 Phase A 工作流原型。Phase C 直编优先 + 回退式擦字流程、Stage 5.5 retouch 工具链、IOPaint 自动安装与启动器、HTML 编辑器 + JSON→PPTX 渲染器 —— 本 skill 自有。商用时请同时标明上述来源。
