@@ -2,11 +2,12 @@
 """
 detect_reserved_zones.py — 检测背景图里的"预留文字区"是否真的留白了
 
-Phase C-Lite 双轨流程的第 2 步：
-  1) imagegen 出第一稿（含装饰文字）
-  2) imagegen 第二稿：以第一稿为 edit target，擦掉可编辑文字、保留装饰
-  3) 本脚本：检测第二稿里的"预留区"是否真的被擦干净了
-  4) 不合规 → 报出来，让 agent 决定重出 / 用 IOPaint 局部擦
+Phase C 的第 2 步：
+  1) 优先直编 Phase A 定稿图
+  2) 若直编后不干净，再回退到 imagegen：先出第一稿（完整稿）
+  3) 再以第一稿为 edit target 擦掉可编辑文字、保留装饰
+  4) 本脚本：检测擦字稿里的"预留区"是否真的被擦干净了
+  5) 不合规 → 报出来，让 agent 决定重出 / 用 IOPaint 局部擦
 
 判定方法：
   对每个声明的 reserved zone，取该矩形内的像素：
@@ -160,7 +161,7 @@ def parse_args() -> argparse.Namespace:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument("background", type=Path, help="第二稿背景图（已擦字稿）")
+    ap.add_argument("background", type=Path, help="待检测背景图（优先是直编结果；回退时是擦字稿）")
     ap.add_argument("zones", type=Path, help="zones.json")
     ap.add_argument("--report", type=Path, help="把详细结果写入 JSON")
     ap.add_argument("--strict", action="store_true", help="收紧阈值")
