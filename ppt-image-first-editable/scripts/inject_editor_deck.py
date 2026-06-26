@@ -16,8 +16,10 @@ inject_editor_deck.py — 把 deck.json 注入 Phase C 编辑器壳子
       --deck  phaseC/deck.json \\
       --out   phaseC/editor.html
 
-  # 默认会把 deck.json 里的相对路径背景图重写成绝对 file:// URL（适合本地打开）
-  # 加 --keep-paths 不改路径（适合背景已经是 https URL 的场景）
+  # 默认保留 deck.json 里的相对路径背景图（适合 HTML 与背景图放在同一目录）
+  # 加 --file-url 会把相对路径重写成绝对 file:// URL（适合本地打开）
+  # 加 --inline 会把背景图 base64 嵌入 HTML，便于离线分发，但 HTML 可能很大
+  # 推荐布局：phaseC/editor.html + phaseC/backgrounds/ 同目录旁置
 
 依赖: 无（标准库）
 """
@@ -79,7 +81,9 @@ def parse_args() -> argparse.Namespace:
     g.add_argument("--inline", action="store_true",
                    help="把背景图 base64 嵌入 HTML（适合离线分发；HTML 会变大）")
     g.add_argument("--keep-paths", action="store_true",
-                   help="保留 deck.json 原本的 background 路径（适合背景已经是 URL）")
+                   help="保留 deck.json 原本的 background 路径（默认；适合 HTML 与背景图同目录）")
+    g.add_argument("--file-url", action="store_true",
+                   help="把相对路径重写成绝对 file:// URL（适合本地打开）")
     return ap.parse_args()
 
 
@@ -90,7 +94,7 @@ def main() -> None:
     if not args.deck.exists():
         sys.exit(f"deck 不存在: {args.deck}")
 
-    mode = "data" if args.inline else ("keep" if args.keep_paths else "file")
+    mode = "data" if args.inline else ("file" if args.file_url else "keep")
     deck = json.loads(args.deck.read_text(encoding="utf-8"))
     deck = rewrite_backgrounds(deck, args.deck.parent.resolve(), mode)
 
@@ -110,8 +114,11 @@ def main() -> None:
     print(f"[ok] 已注入 → {args.out}")
     print(f"     mode = {mode} ({len(deck.get('slides', []))} 页)")
     if mode == "file":
-        print("[hint] 用 file:// 模式：HTML 移动到其它目录后背景会失效；"
-              "要分发请用 --inline 重新生成")
+        print("[hint] 用 file:// 模式：HTML 和背景图需要保持相对位置；"
+              "如果要打包给别人打开，改用 --keep-paths 或 --inline 重新生成")
+    elif mode == "keep":
+        print("[hint] keep 模式：请把 editor.html 和 backgrounds/ 放在相对稳定的位置，"
+              "避免移动后背景路径失效")
 
 
 if __name__ == "__main__":

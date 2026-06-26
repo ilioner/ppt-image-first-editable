@@ -376,7 +376,8 @@ Phase C 增加一个：
 >
 > - 各 data JSON 的 schema 见对应脚本顶部 docstring。
 > - **打开时必须打开 `*_filled.html` / `editor.html`**，不要打开 `assets/.../index.html` 原模板。
-> - 要打包分发，加 `--inline` 把图片 base64 嵌入 HTML。
+> - 默认保留相对路径，配合 HTML 与背景图同目录使用；要打包分发再加 `--inline` 把图片 base64 嵌入 HTML，或加 `--file-url` 改成绝对 `file://`。
+> - `editor.html` 默认应与 `phaseC/backgrounds/` 旁置，避免把背景内嵌成 7MB+ 的单文件。
 > - `build_*.py` 三个脚本只是把壳子从内嵌 base64 还原成 `index.html`，**它们不注入真实数据**，不要把 build 和 inject 搞混。
 
 ---
@@ -453,7 +454,8 @@ python3 scripts/launch_iopaint.py --slides-dir phaseA/slides
 - **字体限定 SAFE_FONT_SET**：见 `scripts/json_to_pptx.py` 顶部。不在集合里会有警告，跨平台可能掉 fallback。可用：PingFang SC / Microsoft YaHei / Hiragino Sans GB / Arial / Helvetica 等系统字体。
 - **坐标用 fraction**：所有 x/y/w/h 都是 0-1，跟 HTML 编辑器和 PPTX 渲染器同语义。
 - **字号用 pt**：直接写 `font_size_pt`，不要算像素。
-- **背景引用可为相对路径 / 绝对路径 / `file://` / `data:`**：编辑器导出的 deck 可能带 `file://` 或内联 base64，`json_to_pptx.py` 必须直接兼容。
+- **背景引用可为相对路径 / 绝对路径 / `file://` / `data:`**：编辑器导出的 deck 可能带这些形式，`json_to_pptx.py` 必须直接兼容。
+- **编辑器默认走旁置文件模式**：`inject_editor_deck.py` 默认保留相对路径，`editor.html` 与 `phaseC/backgrounds/` 放同一目录；只有明确需要时才用 `--inline`。
 - **背景图固化、文字外挂**：背景一旦生成就不再改（除非重出该页）；文字始终是外挂层。
 - **编辑器是单文件 HTML**：关闭浏览器不会自动保存。改完一定要先点"导出 deck.json"再关。
 - **Phase C 完成 = 终态**：拿到可编辑 PPTX 后不要再追问 / 折返到其他路径。
@@ -462,7 +464,7 @@ python3 scripts/launch_iopaint.py --slides-dir phaseA/slides
 1. **C1** 双轨生成背景：完整稿 → imagegen 擦字稿
 2. **C2** `scripts/detect_reserved_zones.py` 校验预留区
 3. **C3** 写 `phaseC/deck.json`（每页 background + text_boxes）
-4. **C4** `scripts/inject_editor_deck.py` 把 deck.json 注入 `assets/editor_shell/index.html`
+4. **C4** `scripts/inject_editor_deck.py` 把 deck.json 注入 `assets/editor_shell/index.html`，默认生成旁置文件版 `editor.html`
 5. **C5** 用户在 HTML 编辑器里调文字 → 导出新的 deck.json
 6. **C6** `scripts/json_to_pptx.py` 渲染 → 可编辑 PPTX
 
