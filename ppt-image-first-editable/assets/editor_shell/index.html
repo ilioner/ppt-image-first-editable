@@ -386,7 +386,7 @@
     </aside>
 
     <main class="canvas-wrap">
-      <div class="hint" id="canvasHint">提示：单击文字框 → 拖动；双击 → 编辑文字；右下角点拖 → 改尺寸；Esc → 退出编辑；Delete → 删除选中</div>
+      <div class="hint" id="canvasHint">提示：单击文字框 → 拖动；双击 → 编辑文字；右下角点拖 → 改尺寸；Esc → 退出编辑；Delete → 删除选中文字框；Backspace → 进入编辑并删一字</div>
       <div class="canvas" id="canvas"></div>
     </main>
 
@@ -432,7 +432,7 @@
         <li><b>左侧</b>切换页面，<b>中间</b>是当前页的画布，<b>右侧</b>编辑选中文字框的属性</li>
         <li>单击文字框 → 选中；选中状态拖动 = 移动；右下角点拖 = 缩放</li>
         <li>双击文字框 → 进入文字编辑（contentEditable），Esc 退出</li>
-        <li>选中后按 <b>Delete</b> / <b>Backspace</b>（非编辑态）删除该文字框</li>
+        <li>选中后按 <b>Delete</b>（非编辑态）删除该文字框；按 <b>Backspace</b> 则进入编辑态并删一字</li>
         <li>顶栏 <b>+ 添加文字框</b> 在画布中央插入一个新的</li>
         <li>所有坐标都是 0-1 的 fraction（左上为原点），跟 PPTX 渲染器同语义</li>
         <li>字体只在 PingFang/Microsoft YaHei/Hiragino/Arial/Helvetica 等系统安全字体里选，避免 PPTX 跨平台跑偏</li>
@@ -850,9 +850,30 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (state.selectedTextBox === null) return;
-  if (e.key === "Delete" || e.key === "Backspace") {
+  if (e.key === "Delete") {
     e.preventDefault();
     deleteSelected();
+  } else if (e.key === "Backspace") {
+    // Backspace 不再误删整框：进入编辑态、把光标放末尾、删掉最后一个字符
+    e.preventDefault();
+    const idx = state.selectedTextBox;
+    enterEditMode(idx);
+    requestAnimationFrame(() => {
+      const el = $canvas.querySelector(`.text-box[data-idx="${idx}"]`);
+      if (!el) return;
+      const text = el.innerText;
+      if (text.length > 0) {
+        el.innerText = text.slice(0, -1);
+        const tb = state.deck.slides[state.currentSlide].text_boxes[idx];
+        if (tb) tb.text = el.innerText;
+      }
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
   }
 });
 
